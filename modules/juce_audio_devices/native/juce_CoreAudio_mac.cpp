@@ -2192,6 +2192,52 @@ public:
             }
         }
 
+        // find custom hidden driver -->
+        CFStringRef uid = CFSTR("JustVoice_2_UID");
+        UInt32 uidSize = sizeof(uid);
+
+        AudioObjectPropertyAddress pa;
+        pa.mSelector = kAudioHardwarePropertyDevices;
+        pa.mSelector = kAudioHardwarePropertyTranslateUIDToDevice;
+        pa.mElement =
+#if defined(MAC_OS_VERSION_12_0)
+            kAudioObjectPropertyElementMain;
+#else
+            kAudioObjectPropertyElementMaster;
+#endif
+
+        UInt32 size;
+
+        if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &pa, uidSize, &uid, &size) == noErr) {
+            HeapBlock<AudioDeviceID> devs;
+            devs.calloc(size, 1);
+
+            if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &pa, uidSize, &uid, &size, devs) == noErr) {
+                char name[1024];
+                size = sizeof(name);
+                pa.mSelector = kAudioDevicePropertyDeviceName;
+
+                if (AudioObjectGetPropertyData(devs[0], &pa, 0, nullptr, &size, name) == noErr) {
+                    auto nameString = String::fromUTF8(name, (int)strlen(name));
+                    auto numIns = getNumChannels(devs[0], true);
+                    auto numOuts = getNumChannels(devs[0], false);
+
+                    if (numIns > 0) {
+                        inputDeviceNames.add(nameString);
+                        inputIds.add(devs[0]);
+                    }
+
+                    if (numOuts > 0) {
+                        outputDeviceNames.add(nameString);
+                        outputIds.add(devs[0]);
+                    }
+                }
+            }
+
+            devs.free();
+        }
+        // <-- find custom hidden driver
+
         inputDeviceNames.appendNumbersToDuplicates (false, true);
         outputDeviceNames.appendNumbersToDuplicates (false, true);
     }
