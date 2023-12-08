@@ -140,7 +140,7 @@ AudioProcessorPlayer::NumChannels AudioProcessorPlayer::findMostSuitableLayout (
 
     std::vector<NumChannels> layouts { deviceChannels };
 
-    if (deviceChannels.ins == 0 || deviceChannels.ins == 1)
+    if (deviceChannels.ins == 0 || deviceChannels.ins == 1 || deviceChannels.ins == 2)
     {
         layouts.emplace_back (defaultProcessorChannels.ins, deviceChannels.outs);
         layouts.emplace_back (deviceChannels.outs, deviceChannels.outs);
