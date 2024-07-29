@@ -117,10 +117,10 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
         auto session = [AVAudioSession sharedInstance];
         auto centre = [NSNotificationCenter defaultCenter];
 
-        [centre addObserver: self
-                   selector: @selector (audioSessionChangedInterruptionType:)
-                       name: AVAudioSessionInterruptionNotification
-                     object: session];
+//        [centre addObserver: self
+//                   selector: @selector (audioSessionChangedInterruptionType:)
+//                       name: AVAudioSessionInterruptionNotification
+//                     object: session];
 
         [centre addObserver: self
                    selector: @selector (handleMediaServicesLost)
