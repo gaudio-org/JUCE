@@ -45,6 +45,8 @@ import android.bluetooth.BluetoothDevice;
 import android.media.midi.MidiOutputPort;
 import android.media.midi.MidiReceiver;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.util.Pair;
@@ -547,6 +549,9 @@ public class JuceMidiSupport
         {
             appContext = contextToUse;
             manager = (MidiManager) appContext.getSystemService (MIDI_SERVICE);
+            
+            // UI 스레드에서 실행하기 위한 Handler 생성
+            mainHandler = new Handler (Looper.getMainLooper ());
 
             if (manager == null)
             {
@@ -817,6 +822,37 @@ public class JuceMidiSupport
             openPorts.remove (path);
         }
 
+        // UI 스레드에서 안전하게 handleDevicesChanged() 호출을 위한 메서드
+        private void handleDevicesChangedSafely ()
+        {
+            String currentThread = Thread.currentThread().getName();
+            boolean isMainThread = (Looper.myLooper () == Looper.getMainLooper ());
+            
+            Log.d ("JUCE", "handleDevicesChangedSafely called from thread: " + currentThread + 
+                   ", isMainThread: " + isMainThread);
+            
+            if (isMainThread)
+            {
+                // 이미 UI 스레드에서 실행 중이면 직접 호출
+                Log.d ("JUCE", "Calling handleDevicesChanged directly from main thread");
+                handleDevicesChanged ();
+            }
+            else
+            {
+                // 다른 스레드에서 실행 중이면 UI 스레드로 전달
+                Log.d ("JUCE", "Posting handleDevicesChanged to main thread from: " + currentThread);
+                mainHandler.post (new Runnable ()
+                {
+                    @Override
+                    public void run ()
+                    {
+                        Log.d ("JUCE", "handleDevicesChanged executed on main thread");
+                        handleDevicesChanged ();
+                    }
+                });
+            }
+        }
+
         @Override
         public void onDeviceAdded (MidiDeviceInfo info)
         {
@@ -866,7 +902,7 @@ public class JuceMidiSupport
                 }
             }
 
-            handleDevicesChanged();
+            handleDevicesChangedSafely();
         }
 
         @Override
@@ -945,7 +981,7 @@ public class JuceMidiSupport
                         BluetoothGatt gatt = openTasks.get (deviceID).getGatt ();
                         openTasks.remove (deviceID);
                         midiDevices.add (new Pair<MidiDevice, BluetoothGatt> (theDevice, gatt));
-                        handleDevicesChanged();
+                        handleDevicesChangedSafely();
                     }
                 } else
                 {
@@ -1066,6 +1102,7 @@ public class JuceMidiSupport
         private MidiDeviceInfo[] deviceInfos;
         private HashMap<MidiPortPath, WeakReference<JuceMidiPort>> openPorts = new HashMap<MidiPortPath, WeakReference<JuceMidiPort>>();
         private Context appContext = null;
+        private Handler mainHandler;
     }
 
     public static MidiDeviceManager getAndroidMidiDeviceManager (Context context)
