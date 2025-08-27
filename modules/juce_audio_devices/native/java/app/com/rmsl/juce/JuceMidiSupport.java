@@ -534,8 +534,16 @@ public class JuceMidiSupport
             {
                 synchronized (MidiDeviceOpenTask.class)
                 {
-                    if (owner != null && midiDevice != null)
-                        owner.onDeviceOpenedDelayed (midiDevice);
+                    if (owner != null && midiDevice != null) {
+                        // UI 스레드가 아니면 post
+                        if (Looper.myLooper() != Looper.getMainLooper())
+                        {
+                            new Handler(Looper.getMainLooper()).post(() -> owner.onDeviceOpenedDelayed(midiDevice));
+                            return;
+                        }
+
+                        owner.onDeviceOpenedDelayed(midiDevice);
+                    }                        
                 }
             }
 
@@ -970,6 +978,13 @@ public class JuceMidiSupport
 
         public void onDeviceOpenedDelayed (MidiDevice theDevice)
         {
+            // 방어 코드: UI 스레드 보장
+            if (Looper.myLooper() != Looper.getMainLooper())
+            {
+                mainHandler.post(() -> onDeviceOpenedDelayed(theDevice));
+                return;
+            }
+
             synchronized (MidiDeviceManager.class)
             {
                 int deviceID = theDevice.getInfo ().getId ();
