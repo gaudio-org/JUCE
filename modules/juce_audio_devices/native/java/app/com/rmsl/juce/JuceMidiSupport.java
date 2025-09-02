@@ -82,7 +82,7 @@ public class JuceMidiSupport
 
     static BluetoothAdapter getDefaultBluetoothAdapter (Context ctx)
     {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S_V2)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2)
             return BluetoothAdapter.getDefaultAdapter();
 
         return ((BluetoothManager) ctx.getSystemService (BLUETOOTH_SERVICE)).getAdapter();
@@ -545,6 +545,7 @@ public class JuceMidiSupport
         //==============================================================================
         public MidiDeviceManager (Context contextToUse)
         {
+            Log.i ("JUCE", "MidiDeviceManager : Applied MIDI support patch");
             appContext = contextToUse;
             manager = (MidiManager) appContext.getSystemService (MIDI_SERVICE);
 
@@ -865,8 +866,8 @@ public class JuceMidiSupport
                     midiDevices.remove (devicePair);
                 }
             }
-
-            handleDevicesChanged();
+            // ignore native call
+            // handleDevicesChanged();
         }
 
         @Override
@@ -945,7 +946,8 @@ public class JuceMidiSupport
                         BluetoothGatt gatt = openTasks.get (deviceID).getGatt ();
                         openTasks.remove (deviceID);
                         midiDevices.add (new Pair<MidiDevice, BluetoothGatt> (theDevice, gatt));
-                        handleDevicesChanged();
+                        // ignore native call
+                        // handleDevicesChanged();
                     }
                 } else
                 {
