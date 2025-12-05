@@ -48,6 +48,8 @@ import android.os.Build;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.util.Pair;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -533,7 +535,16 @@ public class JuceMidiSupport
                 synchronized (MidiDeviceOpenTask.class)
                 {
                     if (owner != null && midiDevice != null)
-                        owner.onDeviceOpenedDelayed (midiDevice);
+                    {
+                        // Use Handler to run on main thread instead of Timer thread
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (owner != null && midiDevice != null)
+                                    owner.onDeviceOpenedDelayed (midiDevice);
+                            }
+                        });
+                    }
                 }
             }
 
@@ -867,6 +878,12 @@ public class JuceMidiSupport
             }
             // ignore native call
             // handleDevicesChanged();
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    handleDevicesChanged();
+                }
+            });
         }
 
         @Override
@@ -947,6 +964,12 @@ public class JuceMidiSupport
                         midiDevices.add (new Pair<MidiDevice, BluetoothGatt> (theDevice, gatt));
                         // ignore native call
                         // handleDevicesChanged();
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                handleDevicesChanged();
+                            }
+                        });
                     }
                 } else
                 {
